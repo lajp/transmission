@@ -763,7 +763,7 @@ static auto constexpr DetailsKeys = std::array<tr_quark, 52>{
     TR_KEY_webseedsSendingToUs
 };
 
-static auto constexpr ListKeys = std::array<tr_quark, 14>{
+static auto constexpr ListKeys = std::array<tr_quark, 15>{
     TR_KEY_error,
     TR_KEY_errorString,
     TR_KEY_eta,
@@ -776,6 +776,7 @@ static auto constexpr ListKeys = std::array<tr_quark, 14>{
     TR_KEY_rateDownload,
     TR_KEY_rateUpload,
     TR_KEY_sizeWhenDone,
+    TR_KEY_uploadedEver,
     TR_KEY_status,
     TR_KEY_uploadRatio
 };
@@ -1435,15 +1436,17 @@ static void printTorrentList(tr_variant* top)
     if (tr_variantDictFindDict(top, TR_KEY_arguments, &args) && tr_variantDictFindList(args, TR_KEY_torrents, &list))
     {
         int64_t total_size = 0;
+        int64_t total_uploaded = 0;
         double total_up = 0;
         double total_down = 0;
 
         printf(
-            "%6s   %-4s  %9s  %-8s  %6s  %6s  %-5s  %-11s  %s\n",
+            "%6s   %-4s  %9s  %-8s  %-4s  %6s  %6s  %-5s  %-11s  %s\n",
             "ID",
             "Done",
             "Have",
             "ETA",
+            "Uploaded",
             "Up",
             "Down",
             "Ratio",
@@ -1459,6 +1462,7 @@ static void printTorrentList(tr_variant* top)
             int64_t down;
             int64_t sizeWhenDone;
             int64_t leftUntilDone;
+            int64_t uploadedEver;
             double ratio;
             auto name = std::string_view{};
             tr_variant* d = tr_variantListChild(list, i);
@@ -1468,6 +1472,7 @@ static void printTorrentList(tr_variant* top)
                 tr_variantDictFindStrView(d, TR_KEY_name, &name) && tr_variantDictFindInt(d, TR_KEY_rateDownload, &down) &&
                 tr_variantDictFindInt(d, TR_KEY_rateUpload, &up) &&
                 tr_variantDictFindInt(d, TR_KEY_sizeWhenDone, &sizeWhenDone) &&
+                tr_variantDictFindInt(d, TR_KEY_uploadedEver, &uploadedEver) &&
                 tr_variantDictFindInt(d, TR_KEY_status, &status) && tr_variantDictFindReal(d, TR_KEY_uploadRatio, &ratio))
             {
                 int64_t error;
@@ -1479,12 +1484,13 @@ static void printTorrentList(tr_variant* top)
                     std::string{ "n/a" };
 
                 fmt::print(
-                    FMT_STRING("{:6d}{:c}  {:>4s}  {:>9s}  {:<8s}  {:6.1f}  {:6.1f}  {:>5s}  {:<11s}  {:s}\n"),
+                    FMT_STRING("{:6d}{:c}  {:>4s}  {:>9s}  {:9s} {:8s}  {:6.1f}  {:6.1f}  {:>5s}  {:<11s}  {:s}\n"),
                     torId,
                     error_mark,
                     done_str,
                     strlsize(sizeWhenDone - leftUntilDone),
                     eta_str,
+                    strlsize(uploadedEver),
                     up / static_cast<double>(tr_speed_K),
                     down / static_cast<double>(tr_speed_K),
                     strlratio2(ratio),
@@ -1494,12 +1500,14 @@ static void printTorrentList(tr_variant* top)
                 total_up += up;
                 total_down += down;
                 total_size += sizeWhenDone - leftUntilDone;
+                total_uploaded += uploadedEver;
             }
         }
 
         fmt::print(
-            FMT_STRING("Sum:           {:>9s}            {:6.1f}  {:6.1f}\n"),
+            FMT_STRING("Sum:           {:>9s}     {:>14s}     {:6.1f}  {:6.1f}\n"),
             strlsize(total_size).c_str(),
+            strlsize(total_uploaded).c_str(),
             total_up / static_cast<double>(tr_speed_K),
             total_down / static_cast<double>(tr_speed_K));
     }
