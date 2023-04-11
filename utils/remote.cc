@@ -1505,7 +1505,7 @@ static void printTorrentList(tr_variant* top)
         }
 
         fmt::print(
-            FMT_STRING("Sum:           {:>9s}     {:>14s}     {:6.1f}  {:6.1f}\n"),
+            FMT_STRING("Sum:           {:>9s}            {:10s}{:6.1f}  {:6.1f}\n"),
             strlsize(total_size).c_str(),
             strlsize(total_uploaded).c_str(),
             total_up / static_cast<double>(tr_speed_K),
